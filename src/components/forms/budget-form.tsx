@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type SubmitHandler, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { budgetSchema, type BudgetFormData } from "@/lib/validations";
 import { createClient } from "@/lib/supabase/client";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import type { Category, Budget } from "@/types";
 import { useRouter } from "next/navigation";
 import { getCurrentMonth, getCurrentYear } from "@/lib/utils";
@@ -28,8 +28,9 @@ export function BudgetForm({ open, onClose, categories, editBudget, userId }: Bu
   const router = useRouter();
   const supabase = createClient();
 
+  // Explicitly type useForm and cast the resolver to align Zod's input with Hook Form's output
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<BudgetFormData>({
-    resolver: zodResolver(budgetSchema),
+    resolver: zodResolver(budgetSchema) as unknown as Resolver<BudgetFormData>,
     defaultValues: editBudget
       ? {
           category_id: editBudget.category_id,
@@ -47,7 +48,7 @@ export function BudgetForm({ open, onClose, categories, editBudget, userId }: Bu
 
   const expenseCategories = categories.filter((c) => c.type === "expense");
 
-  const onSubmit = async (data: BudgetFormData) => {
+  const onSubmit: SubmitHandler<BudgetFormData> = async (data) => {
     setLoading(true);
     setError(null);
 
@@ -82,7 +83,13 @@ export function BudgetForm({ open, onClose, categories, editBudget, userId }: Bu
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{editBudget ? "Edit Budget" : "Set Budget"}</DialogTitle>
+          <DialogDescription>
+            {editBudget 
+              ? "Update your monthly spending limit for this category." 
+              : "Set a monthly spending limit to track your financial goals."}
+          </DialogDescription>
         </DialogHeader>
+        
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {error && (
             <div className="bg-red-50 dark:bg-red-950 text-red-600 text-sm p-3 rounded-lg">{error}</div>
@@ -109,7 +116,12 @@ export function BudgetForm({ open, onClose, categories, editBudget, userId }: Bu
 
           <div className="space-y-2">
             <Label>Budget Amount</Label>
-            <Input type="number" step="0.01" placeholder="0.00" {...register("amount")} />
+            <Input 
+              type="number" 
+              step="0.01" 
+              placeholder="0.00" 
+              {...register("amount", { valueAsNumber: true })} 
+            />
             {errors.amount && <p className="text-xs text-red-500">{errors.amount.message}</p>}
           </div>
 
@@ -135,7 +147,11 @@ export function BudgetForm({ open, onClose, categories, editBudget, userId }: Bu
             </div>
             <div className="space-y-2">
               <Label>Year</Label>
-              <Input type="number" {...register("year")} disabled={!!editBudget} />
+              <Input 
+                type="number" 
+                {...register("year", { valueAsNumber: true })} 
+                disabled={!!editBudget} 
+              />
             </div>
           </div>
 

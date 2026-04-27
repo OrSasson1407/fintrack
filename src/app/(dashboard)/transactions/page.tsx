@@ -25,7 +25,10 @@ export default async function TransactionsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Transactions</h1>
+      <div className="mb-8">
+        <h2 className="text-label-sm mb-1 text-acid">OVERVIEW</h2>
+        <h1 className="text-display-md">TRANSACTIONS</h1>
+      </div>
       <TransactionList
         transactions={transactions || []}
         categories={categories || []}

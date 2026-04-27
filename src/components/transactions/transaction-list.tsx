@@ -16,6 +16,7 @@ import {
   Inbox,
   AlertTriangle,
   CalendarDays,
+  Download,
 } from "lucide-react";
 
 interface TransactionListProps {
@@ -39,6 +40,11 @@ export function TransactionList({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   
+  // Bulk selection & export state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showBulkConfirm, setShowBulkConfirm] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
@@ -60,6 +66,22 @@ export function TransactionList({
     const matchesCategory = categoryFilter === "all" || t.category_id === categoryFilter;
     return matchesSearch && matchesType && matchesCategory;
   });
+
+  // Calculate running balances (processes oldest to newest because DB returns newest first)
+  const runningBalances = useMemo(() => {
+    const balances: Record<string, number> = {};
+    let currentBalance = 0;
+    for (let i = transactions.length - 1; i >= 0; i--) {
+      const t = transactions[i];
+      if (t.type === "income") {
+        currentBalance += t.amount;
+      } else {
+        currentBalance -= t.amount;
+      }
+      balances[t.id] = currentBalance;
+    }
+    return balances;
+  }, [transactions]);
 
   // Group transactions logically
   const groupedTransactions = useMemo(() => {
@@ -96,12 +118,69 @@ export function TransactionList({
     return groups;
   }, [filtered]);
 
+  // --- Handlers ---
   const handleDelete = async (id: string) => {
     setDeletingId(id);
     await supabase.from("transactions").delete().eq("id", id);
     setDeletingId(null);
     setConfirmId(null);
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
     router.refresh();
+  };
+
+  const handleBulkDelete = async () => {
+    setIsBulkDeleting(true);
+    const idsToDelete = Array.from(selectedIds);
+    await supabase.from("transactions").delete().in("id", idsToDelete);
+    setSelectedIds(new Set());
+    setShowBulkConfirm(false);
+    setIsBulkDeleting(false);
+    router.refresh();
+  };
+
+  const exportToCSV = () => {
+    const headers = ["Date", "Description", "Category", "Type", "Amount", "Running Balance"];
+    const csvContent = [
+      headers.join(","),
+      ...filtered.map(t => {
+        return [
+          new Date(t.date).toISOString().split('T')[0],
+          `"${(t.description || t.category?.name || "Untitled").replace(/"/g, '""')}"`,
+          `"${(t.category?.name || "Uncategorized").replace(/"/g, '""')}"`,
+          t.type,
+          t.amount.toString(),
+          (runningBalances[t.id] || 0).toString()
+        ].join(",");
+      })
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `transactions_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const toggleSelect = (id: string) => {
+    const newSet = new Set(selectedIds);
+    if (newSet.has(id)) newSet.delete(id);
+    else newSet.add(id);
+    setSelectedIds(newSet);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filtered.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map(t => t.id)));
+    }
   };
 
   return (
@@ -117,14 +196,63 @@ export function TransactionList({
           onCategoryChange={setCategoryFilter}
           categories={categories}
         />
-        <button
-          className="btn-acid flex items-center gap-2 self-start sm:self-auto py-2 px-4 shadow-sm transition-transform hover:scale-105"
-          onClick={() => { setEditTransaction(null); setShowForm(true); }}
-        >
-          <Plus size={14} strokeWidth={3} />
-          <span className="font-semibold tracking-wide text-xs uppercase">New Transaction</span>
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <button
+            onClick={exportToCSV}
+            className="btn-ghost flex items-center gap-2 py-2 px-3 shadow-sm hover:text-white"
+            title="Export filtered transactions to CSV"
+          >
+            <Download size={14} strokeWidth={2} />
+            <span className="font-semibold tracking-wide text-xs uppercase hidden sm:inline-block">Export</span>
+          </button>
+          <button
+            className="btn-acid flex items-center gap-2 py-2 px-4 shadow-sm transition-transform hover:scale-105"
+            onClick={() => { setEditTransaction(null); setShowForm(true); }}
+          >
+            <Plus size={14} strokeWidth={3} />
+            <span className="font-semibold tracking-wide text-xs uppercase">New</span>
+          </button>
+        </div>
       </div>
+
+      {/* Bulk Action Banner */}
+      {showBulkConfirm ? (
+        <div className="bg-red-950/40 border border-red-500/50 p-4 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in">
+          <div className="flex items-center gap-3">
+            <AlertTriangle size={18} className="text-red-500 animate-pulse" />
+            <span className="text-sm font-mono text-expense font-bold">
+              Permanently delete {selectedIds.size} transaction{selectedIds.size > 1 ? "s" : ""}?
+            </span>
+          </div>
+          <div className="flex gap-3 self-end sm:self-auto">
+            <button onClick={() => setShowBulkConfirm(false)} className="btn-ghost text-xs">Cancel</button>
+            <button 
+              onClick={handleBulkDelete} 
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold uppercase tracking-wider rounded transition-colors disabled:opacity-50"
+              disabled={isBulkDeleting}
+            >
+              {isBulkDeleting ? "Deleting..." : "Confirm Delete"}
+            </button>
+          </div>
+        </div>
+      ) : selectedIds.size > 0 ? (
+        <div className="bg-surface-2 border border-border p-3 rounded-lg flex items-center justify-between animate-fade-in shadow-md">
+          <span className="text-sm font-mono text-acid font-semibold bg-acid/10 px-3 py-1 rounded-md">
+            {selectedIds.size} selected
+          </span>
+          <div className="flex items-center gap-3">
+            <button onClick={() => setSelectedIds(new Set())} className="text-xs font-mono uppercase text-text-tertiary hover:text-text-primary transition-colors">
+              Clear
+            </button>
+            <button 
+              onClick={() => setShowBulkConfirm(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 rounded border border-red-500/20 text-xs font-mono uppercase tracking-wider transition-colors"
+            >
+              <Trash2 size={13} /> Delete
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {/* Results count */}
       {transactions.length > 0 && (
@@ -162,14 +290,23 @@ export function TransactionList({
         <div className="rounded-lg overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
           {/* Table header */}
           <div
-            className="hidden sm:grid px-6 py-3"
+            className="hidden sm:grid px-6 py-3 items-center"
             style={{
-              gridTemplateColumns: "1fr 130px 140px 90px",
+              gridTemplateColumns: "30px 1fr 110px 110px 120px 80px",
               backgroundColor: "var(--surface-2)",
               borderBottom: "1px solid var(--border)",
             }}
           >
-            {["Transaction Details", "Date", "Amount", ""].map((h, i) => (
+            <div className="flex justify-center">
+              <input 
+                type="checkbox" 
+                checked={selectedIds.size === filtered.length && filtered.length > 0}
+                onChange={toggleSelectAll}
+                className="accent-acid w-3.5 h-3.5 rounded border-border bg-surface cursor-pointer"
+                title="Select all"
+              />
+            </div>
+            {["Transaction Details", "Date", "Amount", "Balance", ""].map((h, i) => (
               <span
                 key={i}
                 style={{
@@ -178,7 +315,8 @@ export function TransactionList({
                   letterSpacing: "0.15em",
                   textTransform: "uppercase",
                   color: "var(--text-tertiary)",
-                  textAlign: i === 2 ? "right" : "left",
+                  textAlign: i >= 2 && i <= 3 ? "right" : "left",
+                  paddingLeft: i === 0 ? "0.5rem" : "0",
                 }}
               >
                 {h}
@@ -204,15 +342,15 @@ export function TransactionList({
                 <ul>
                   {txs.map((t, i) => {
                     const isIncome = t.type === "income";
-                    const Arrow = isIncome ? ArrowUpRight : ArrowDownRight;
                     const isConfirming = confirmId === t.id;
                     const isDeleting = deletingId === t.id;
                     const isLastInGroup = i === txs.length - 1;
+                    const isSelected = selectedIds.has(t.id);
 
                     return (
                       <li
                         key={t.id}
-                        className="animate-fade-in group"
+                        className={`animate-fade-in group transition-colors ${isSelected ? "bg-acid/5" : ""}`}
                         style={{ borderBottom: isLastInGroup ? "none" : "1px solid var(--border)", animationDelay: `${i * 20}ms` }}
                       >
                         {isConfirming ? (
@@ -239,15 +377,25 @@ export function TransactionList({
                         ) : (
                           <div
                             className="grid sm:grid items-center px-6 py-4 gap-4 transition-all duration-200 hover:bg-white/5"
-                            style={{ gridTemplateColumns: "1fr 130px 140px 90px" }}
+                            style={{ gridTemplateColumns: "30px 1fr 110px 110px 120px 80px" }}
                           >
+                            {/* Checkbox */}
+                            <div className="flex justify-center">
+                              <input 
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => toggleSelect(t.id)}
+                                className="accent-acid w-3.5 h-3.5 rounded border-border bg-surface cursor-pointer"
+                              />
+                            </div>
+
                             {/* Description & Category Indicator */}
-                            <div className="flex items-center gap-4 min-w-0">
+                            <div className="flex items-center gap-3 min-w-0 pl-2">
                               <div 
-                                className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 border border-white/10 shadow-inner"
+                                className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 border border-white/10 shadow-inner"
                                 style={{ backgroundColor: `${t.category?.color || "var(--text-tertiary)"}15` }}
                               >
-                                <div style={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: t.category?.color || "var(--text-tertiary)" }} />
+                                <div style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: t.category?.color || "var(--text-tertiary)" }} />
                               </div>
                               <div className="min-w-0">
                                 <div className="text-sm font-medium text-white truncate">
@@ -277,17 +425,32 @@ export function TransactionList({
                               </span>
                             </div>
 
+                            {/* Running Balance */}
+                            <div className="flex items-center gap-1.5 justify-end">
+                              <span style={{
+                                fontFamily: "var(--font-mono)",
+                                fontSize: "0.85rem",
+                                fontWeight: 500,
+                                color: "var(--text-secondary)",
+                                fontVariantNumeric: "tabular-nums",
+                              }}>
+                                {formatCurrency(runningBalances[t.id] || 0, currency)}
+                              </span>
+                            </div>
+
                             {/* Actions */}
                             <div className="flex items-center gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                               <button
                                 onClick={() => { setEditTransaction(t); setShowForm(true); }}
                                 className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:bg-white/10 hover:text-white transition-all"
+                                title="Edit"
                               >
                                 <Pencil size={13} />
                               </button>
                               <button
                                 onClick={() => setConfirmId(t.id)}
                                 className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:bg-red-500/20 hover:text-red-500 transition-all"
+                                title="Delete"
                               >
                                 <Trash2 size={13} />
                               </button>

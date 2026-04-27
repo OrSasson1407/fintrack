@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { LogOut, Settings, User } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import Link from "next/link";
 
 interface UserMenuProps {
@@ -41,30 +41,43 @@ export function UserMenu({ fullName, email }: UserMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-          <Avatar className="h-9 w-9">
-            <AvatarFallback className="bg-indigo-100 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400">
+        <Button 
+          variant="ghost" 
+          className="relative h-10 w-10 rounded-lg transition-transform hover:scale-105 hover:bg-transparent"
+        >
+          <Avatar className="h-10 w-10 rounded-lg border border-[var(--border)] hover:border-white/20 transition-colors shadow-sm">
+            <AvatarFallback 
+              className="rounded-lg font-display text-[1rem] tracking-wider"
+              style={{ backgroundColor: "var(--surface-2)", color: "var(--acid)" }}
+            >
               {initials}
             </AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <div className="px-2 py-1.5">
-          <p className="text-sm font-medium">{fullName || "User"}</p>
-          <p className="text-xs text-slate-500">{email}</p>
+      <DropdownMenuContent 
+        align="end" 
+        className="w-56 rounded-xl border border-[var(--border)] shadow-xl"
+        style={{ backgroundColor: "var(--surface)" }}
+      >
+        <div className="px-3 py-2.5">
+          <p className="text-sm font-display tracking-wide text-white">{fullName || "User"}</p>
+          <p className="text-xs font-mono text-muted-foreground truncate">{email}</p>
         </div>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/settings" className="cursor-pointer">
-            <Settings className="mr-2 h-4 w-4" />
-            Settings
+        <DropdownMenuSeparator className="bg-[var(--border)]" />
+        <DropdownMenuItem asChild className="focus:bg-white/5 focus:text-white cursor-pointer py-2.5 rounded-md mx-1">
+          <Link href="/settings">
+            <Settings className="mr-2 h-4 w-4 text-muted-foreground" />
+            <span className="font-mono text-xs uppercase tracking-widest">Settings</span>
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-red-600">
+        <DropdownMenuSeparator className="bg-[var(--border)]" />
+        <DropdownMenuItem 
+          onClick={handleSignOut} 
+          className="focus:bg-rose-500/10 focus:text-rose-500 text-rose-500 cursor-pointer py-2.5 rounded-md mx-1"
+        >
           <LogOut className="mr-2 h-4 w-4" />
-          Sign Out
+          <span className="font-mono text-xs uppercase tracking-widest font-bold">Sign Out</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

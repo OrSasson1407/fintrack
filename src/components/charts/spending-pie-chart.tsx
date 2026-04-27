@@ -1,13 +1,12 @@
 "use client";
 
-import { Pie } from "react-chartjs-2";
+import { Doughnut } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   ArcElement,
   Tooltip,
   Legend,
 } from "chart.js";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -19,14 +18,9 @@ interface SpendingPieChartProps {
 export function SpendingPieChart({ data, currency }: SpendingPieChartProps) {
   if (data.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Spending by Category</CardTitle>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center h-64 text-slate-400">
-          No expense data yet
-        </CardContent>
-      </Card>
+      <div className="flex flex-col items-center justify-center h-64 text-slate-500 font-mono text-xs uppercase tracking-widest">
+        No expense data yet
+      </div>
     );
   }
 
@@ -37,7 +31,9 @@ export function SpendingPieChart({ data, currency }: SpendingPieChartProps) {
         data: data.map((d) => d.amount),
         backgroundColor: data.map((d) => d.color),
         borderWidth: 2,
-        borderColor: "#ffffff",
+        borderColor: "var(--surface)", // Matches background perfectly to create gaps
+        hoverOffset: 12, // The premium slice pop-out effect
+        borderRadius: 4, // Slightly rounded slice edges
       },
     ],
   };
@@ -45,15 +41,27 @@ export function SpendingPieChart({ data, currency }: SpendingPieChartProps) {
   const options = {
     responsive: true,
     maintainAspectRatio: false,
+    cutout: '75%', // Makes it a sleek thin ring
     plugins: {
       legend: {
-        position: "bottom" as const,
-        labels: { padding: 16, usePointStyle: true, pointStyle: "circle" },
+        position: "right" as const,
+        labels: { 
+          padding: 20, 
+          usePointStyle: true, 
+          pointStyle: "circle",
+          color: '#a1a1aa', // text-muted-foreground
+          font: { family: 'monospace', size: 11 }
+        },
       },
       tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        titleFont: { family: 'monospace', size: 11, weight: 'normal' as const },
+        bodyFont: { family: 'sans-serif', size: 14, weight: 'bold' as const },
+        padding: 12,
+        cornerRadius: 8,
         callbacks: {
           label: (context: { label: string; parsed: number }) => {
-            return `${context.label}: ${new Intl.NumberFormat("en-US", {
+            return ` ${new Intl.NumberFormat("en-US", {
               style: "currency",
               currency,
             }).format(context.parsed)}`;
@@ -64,15 +72,8 @@ export function SpendingPieChart({ data, currency }: SpendingPieChartProps) {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Spending by Category</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="h-64">
-          <Pie data={chartData} options={options} />
-        </div>
-      </CardContent>
-    </Card>
+    <div className="h-64 w-full flex justify-center">
+      <Doughnut data={chartData} options={options} />
+    </div>
   );
 }

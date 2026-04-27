@@ -51,8 +51,13 @@ export default async function AnalyticsPage() {
   const totalExpensesThisMonth = (currentTransactions || []).reduce((s, t) => s + Number(t.amount), 0);
   const totalTransactions      = (currentTransactions || []).length;
   const dailyAvg               = now.getDate() > 0 ? totalExpensesThisMonth / now.getDate() : 0;
-  const topCategories          = Object.values(categorySpending).sort((a, b) => b.amount - a.amount).slice(0, 5);
-  const monthLabel             = `${getMonthName(now.getMonth() + 1)} ${now.getFullYear()}`;
+  
+  type CategoryData = { name: string; amount: number; color: string };
+  const topCategories = (Object.values(categorySpending) as CategoryData[])
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 5);  
+
+  const monthLabel = `${getMonthName(now.getMonth() + 1)} ${now.getFullYear()}`;
 
   const stats = [
     { code: "A", label: "Transactions", value: String(totalTransactions), sub: "this month", color: "var(--acid)", icon: Layers },
@@ -65,7 +70,7 @@ export default async function AnalyticsPage() {
 
       {/* Stat cards */}
       <div
-        className="grid grid-cols-1 sm:grid-cols-3 gap-px"
+        className="grid grid-cols-1 sm:grid-cols-3 gap-px rounded-xl overflow-hidden shadow-sm"
         style={{ backgroundColor: "var(--border)" }}
       >
         {stats.map((s, i) => {
@@ -73,26 +78,26 @@ export default async function AnalyticsPage() {
           return (
             <div
               key={s.code}
-              className="animate-fade-in"
+              className="animate-fade-in transition-colors hover:bg-white/5"
               style={{
                 backgroundColor: "var(--surface)",
-                padding: "1.25rem 1.5rem",
+                padding: "1.5rem",
                 animationDelay: `${i * 70}ms`,
                 position: "relative",
               }}
             >
-              <div className="flex items-start justify-between mb-3">
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.48rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--text-tertiary)" }}>
+              <div className="flex items-start justify-between mb-4">
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.5rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--text-tertiary)" }}>
                   05{s.code} / {s.label}
                 </span>
-                <div style={{ width: 28, height: 28, backgroundColor: "var(--surface-3)", border: `1px solid var(--border)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <Icon size={13} style={{ color: s.color }} />
+                <div style={{ width: 32, height: 32, backgroundColor: "var(--surface-3)", borderRadius: "8px", border: `1px solid var(--border)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Icon size={14} style={{ color: s.color }} />
                 </div>
               </div>
-              <div style={{ fontFamily: "var(--font-display)", fontSize: "clamp(1.4rem, 3vw, 2rem)", color: s.color, letterSpacing: "0.02em", fontVariantNumeric: "tabular-nums", marginBottom: "0.25rem" }}>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: "clamp(1.6rem, 3vw, 2.2rem)", color: s.color, letterSpacing: "0.02em", fontVariantNumeric: "tabular-nums", marginBottom: "0.25rem" }}>
                 {s.value}
               </div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.52rem", color: "var(--text-tertiary)", letterSpacing: "0.04em" }}>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.55rem", color: "var(--text-tertiary)", letterSpacing: "0.04em" }}>
                 {s.sub}
               </div>
               <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "2px", backgroundColor: s.color, opacity: 0.35 }} />
@@ -102,87 +107,97 @@ export default async function AnalyticsPage() {
       </div>
 
       {/* Charts — income vs expense + pie */}
-      <div>
+      <div className="rounded-xl overflow-hidden shadow-sm border border-[var(--border)]">
         <div
-          className="flex items-center gap-2 px-4 py-2 mb-px"
-          style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", borderBottom: "none" }}
+          className="flex items-center gap-2 px-5 py-3 border-b border-[var(--border)]"
+          style={{ backgroundColor: "var(--surface-2)" }}
         >
-          <BarChart2 size={11} style={{ color: "var(--text-tertiary)" }} />
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.48rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--text-tertiary)" }}>
+          <BarChart2 size={13} style={{ color: "var(--text-tertiary)" }} />
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.55rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--text-secondary)", fontWeight: 600 }}>
             6-Month Overview & Category Breakdown
           </span>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-px" style={{ backgroundColor: "var(--border)" }}>
-          <div style={{ backgroundColor: "var(--surface)" }}><IncomeExpenseBar data={monthlyData} currency={currency} /></div>
-          <div style={{ backgroundColor: "var(--surface)" }}><SpendingPieChart data={Object.values(categorySpending)} currency={currency} /></div>
+          <div className="p-6" style={{ backgroundColor: "var(--surface)" }}>
+            <IncomeExpenseBar data={monthlyData} currency={currency} />
+          </div>
+          <div className="p-6 flex items-center justify-center" style={{ backgroundColor: "var(--surface)" }}>
+            <SpendingPieChart data={Object.values(categorySpending)} currency={currency} />
+          </div>
         </div>
       </div>
 
       {/* Trend charts */}
-      <div>
+      <div className="rounded-xl overflow-hidden shadow-sm border border-[var(--border)]">
         <div
-          className="flex items-center gap-2 px-4 py-2 mb-px"
-          style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", borderBottom: "none" }}
+          className="flex items-center gap-2 px-5 py-3 border-b border-[var(--border)]"
+          style={{ backgroundColor: "var(--surface-2)" }}
         >
-          <Activity size={11} style={{ color: "var(--text-tertiary)" }} />
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.48rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--text-tertiary)" }}>
+          <Activity size={13} style={{ color: "var(--text-tertiary)" }} />
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.55rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--text-secondary)", fontWeight: 600 }}>
             Trend Lines
           </span>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-px" style={{ backgroundColor: "var(--border)" }}>
-          <div style={{ backgroundColor: "var(--surface)" }}>
-            <TrendLineChart data={expenseTrend} title="Expense Trend" color="#FF4455" currency={currency} />
+          <div className="p-6" style={{ backgroundColor: "var(--surface)" }}>
+            <TrendLineChart data={expenseTrend} title="Expense Trend" color="#f43f5e" currency={currency} />
           </div>
-          <div style={{ backgroundColor: "var(--surface)" }}>
-            <TrendLineChart data={incomeTrend} title="Income Trend" color="#00FF88" currency={currency} />
+          <div className="p-6" style={{ backgroundColor: "var(--surface)" }}>
+            <TrendLineChart data={incomeTrend} title="Income Trend" color="#10b981" currency={currency} />
           </div>
         </div>
       </div>
 
       {/* Top categories */}
-      <div style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+      <div className="rounded-xl overflow-hidden shadow-sm border border-[var(--border)]" style={{ backgroundColor: "var(--surface)" }}>
         <div
-          className="flex items-center gap-3 px-5 py-3"
-          style={{ borderBottom: "1px solid var(--border)", backgroundColor: "var(--surface-2)" }}
+          className="flex items-center gap-3 px-5 py-4 border-b border-[var(--border)]"
+          style={{ backgroundColor: "var(--surface-2)" }}
         >
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.46rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--text-tertiary)" }}>05D /</span>
-          <span style={{ fontFamily: "var(--font-display)", fontSize: "1rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-primary)" }}>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.5rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--text-tertiary)" }}>05D /</span>
+          <span style={{ fontFamily: "var(--font-display)", fontSize: "1.1rem", letterSpacing: "0.06em", color: "var(--text-primary)" }}>
             Top Spending Categories
           </span>
-          <span className="tag tag-muted ml-auto">{monthLabel}</span>
+          <span className="tag tag-muted ml-auto px-3 py-1 bg-white/5 rounded-full border border-white/10 text-xs font-mono">{monthLabel}</span>
         </div>
 
         {topCategories.length === 0 ? (
-          <div style={{ padding: "3rem", textAlign: "center", fontFamily: "var(--font-mono)", fontSize: "0.62rem", color: "var(--text-tertiary)", letterSpacing: "0.08em" }}>
-            No expense data this month
+          <div className="py-12 flex flex-col items-center justify-center">
+            <Layers size={24} className="text-muted-foreground mb-3 opacity-50" />
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.65rem", color: "var(--text-tertiary)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+              No expense data this month
+            </div>
           </div>
         ) : (
-          <div style={{ padding: "1.25rem 1.5rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          <div style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
             {topCategories.map((c, i) => {
               const pct = totalExpensesThisMonth > 0 ? (c.amount / totalExpensesThisMonth) * 100 : 0;
               return (
-                <div key={c.name} className="animate-fade-in" style={{ animationDelay: `${i * 50}ms` }}>
-                  <div className="flex items-center justify-between mb-1">
+                <div key={c.name} className="animate-fade-in group" style={{ animationDelay: `${i * 50}ms` }}>
+                  <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">
-                      <span style={{ fontFamily: "var(--font-display)", fontSize: "1.2rem", color: "var(--text-tertiary)", opacity: 0.4, minWidth: "24px", lineHeight: 1 }}>
+                      <span style={{ fontFamily: "var(--font-display)", fontSize: "1.1rem", color: "var(--text-tertiary)", opacity: 0.5, minWidth: "24px", lineHeight: 1 }}>
                         {String(i + 1).padStart(2, "0")}
                       </span>
-                      <div style={{ width: 8, height: 8, backgroundColor: c.color, flexShrink: 0 }} />
-                      <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.68rem", color: "var(--text-primary)", letterSpacing: "0.04em" }}>
+                      <div style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: c.color, flexShrink: 0, boxShadow: `0 0 10px ${c.color}40` }} />
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "var(--text-primary)", letterSpacing: "0.04em", fontWeight: 500 }}>
                         {c.name}
                       </span>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.52rem", color: "var(--text-tertiary)" }}>
+                    <div className="flex items-center gap-4">
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.6rem", color: "var(--text-tertiary)" }}>
                         {pct.toFixed(1)}%
                       </span>
-                      <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", fontWeight: 600, color: "var(--expense)", fontVariantNumeric: "tabular-nums" }}>
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.85rem", fontWeight: 600, color: "var(--expense)", fontVariantNumeric: "tabular-nums" }}>
                         {formatCurrency(c.amount, currency)}
                       </span>
                     </div>
                   </div>
-                  <div className="progress-track">
-                    <div className="progress-fill" style={{ width: `${pct}%`, backgroundColor: c.color }} />
+                  <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full rounded-full transition-all duration-1000 ease-out" 
+                      style={{ width: `${pct}%`, backgroundColor: c.color }} 
+                    />
                   </div>
                 </div>
               );

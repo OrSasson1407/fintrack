@@ -2,7 +2,7 @@
 
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { Transaction } from "@/types";
-import { ArrowUpRight, ArrowDownRight, Inbox } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Inbox, Clock } from "lucide-react";
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
@@ -12,160 +12,125 @@ interface RecentTransactionsProps {
 export function RecentTransactions({ transactions, currency }: RecentTransactionsProps) {
   if (transactions.length === 0) {
     return (
-      <div
-        style={{
-          backgroundColor: "var(--surface)",
-          border: "1px solid var(--border)",
-          padding: "3rem 2rem",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: "0.75rem",
-        }}
-      >
-        <Inbox size={28} style={{ color: "var(--text-tertiary)" }} />
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.65rem", color: "var(--text-tertiary)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-          No transactions yet
+      <div className="rounded-xl" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", padding: "4rem 2rem", display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
+        <div className="p-4 rounded-full" style={{ backgroundColor: "var(--surface-2)" }}>
+          <Inbox size={32} style={{ color: "var(--text-tertiary)" }} />
         </div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.55rem", color: "var(--text-tertiary)" }}>
-          Add your first transaction to get started
+        <div className="text-center">
+          <div style={{ fontFamily: "var(--font-display)", fontSize: "1.1rem", color: "var(--text-primary)", marginBottom: "0.25rem" }}>
+            No recent activity
+          </div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.65rem", color: "var(--text-tertiary)" }}>
+            Your latest transactions will appear here
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+    <div className="rounded-xl overflow-hidden shadow-sm" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
       {/* Header */}
       <div
-        className="flex items-center justify-between px-5 py-3"
-        style={{ borderBottom: "1px solid var(--border)" }}
+        className="flex items-center justify-between px-6 py-4"
+        style={{ borderBottom: "1px solid var(--border)", backgroundColor: "rgba(255,255,255,0.02)" }}
       >
         <div className="flex items-center gap-3">
-          <span style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: "0.48rem",
-            letterSpacing: "0.18em",
-            textTransform: "uppercase",
-            color: "var(--text-tertiary)",
-          }}>
-            02 /
-          </span>
-          <span style={{
-            fontFamily: "var(--font-display)",
-            fontSize: "1rem",
-            letterSpacing: "0.06em",
-            color: "var(--text-primary)",
-            textTransform: "uppercase",
-          }}>
-            Recent Transactions
-          </span>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 border border-white/10">
+            <Clock size={14} className="text-muted-foreground" />
+          </div>
+          <div>
+            <span style={{ fontFamily: "var(--font-display)", fontSize: "1.1rem", letterSpacing: "0.04em", color: "var(--text-primary)" }}>
+              Recent Transactions
+            </span>
+            <span className="block mt-0.5" style={{ fontFamily: "var(--font-mono)", fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-tertiary)" }}>
+              Latest {transactions.length} entries
+            </span>
+          </div>
         </div>
-        <span className="tag tag-muted">
-          {transactions.length} entries
-        </span>
-      </div>
-
-      {/* Column headers */}
-      <div
-        className="grid px-5 py-2"
-        style={{
-          gridTemplateColumns: "1fr auto auto",
-          borderBottom: "1px solid var(--border)",
-          backgroundColor: "var(--surface-2)",
-        }}
-      >
-        {["Description", "Date", "Amount"].map((h) => (
-          <span key={h} style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: "0.48rem",
-            letterSpacing: "0.15em",
-            textTransform: "uppercase",
-            color: "var(--text-tertiary)",
-            textAlign: h === "Amount" ? "right" : "left",
-          }}>
-            {h}
-          </span>
-        ))}
+        <button className="text-xs font-mono font-medium text-indigo-400 hover:text-indigo-300 transition-colors uppercase tracking-widest">
+          View All
+        </button>
       </div>
 
       {/* Rows */}
-      <ul>
+      <ul className="flex flex-col">
         {transactions.map((t, i) => {
           const isIncome = t.type === "income";
-          const Arrow = isIncome ? ArrowUpRight : ArrowDownRight;
+          const categoryColor = t.category?.color || "var(--text-tertiary)";
+          const categoryName = t.category?.name || "Uncategorized";
+          const description = t.description || categoryName;
+          
           return (
             <li
               key={t.id}
-              className="animate-fade-in"
+              className="animate-fade-in group"
               style={{
                 borderBottom: i < transactions.length - 1 ? "1px solid var(--border)" : "none",
-                animationDelay: `${i * 40}ms`,
+                animationDelay: `${i * 30}ms`,
               }}
             >
               <div
-                className="grid items-center px-5 py-3 transition-colors duration-100"
-                style={{
-                  gridTemplateColumns: "1fr auto auto",
-                  gap: "1rem",
-                }}
-                onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.backgroundColor = "var(--surface-2)"}
-                onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"}
+                className="grid items-center px-6 py-4 transition-all duration-200 hover:bg-white/5"
+                style={{ gridTemplateColumns: "1fr auto auto", gap: "1.5rem" }}
               >
-                {/* Description */}
-                <div className="flex items-center gap-3 min-w-0">
-                  {/* Category dot */}
-                  <div style={{
-                    width: 8,
-                    height: 8,
-                    flexShrink: 0,
-                    backgroundColor: t.category?.color || "var(--text-tertiary)",
-                  }} />
-                  <div className="min-w-0">
-                    <div style={{
-                      fontFamily: "var(--font-mono)",
-                      fontSize: "0.7rem",
-                      color: "var(--text-primary)",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}>
-                      {t.description || t.category?.name || "Untitled"}
+                {/* Visual Icon & Description */}
+                <div className="flex items-center gap-4 min-w-0">
+                  {/* Vibrant Category Monogram Badge */}
+                  <div 
+                    className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 shadow-inner"
+                    style={{ 
+                      backgroundColor: `${categoryColor}15`, 
+                      border: `1px solid ${categoryColor}30`,
+                      color: categoryColor
+                    }}
+                  >
+                    <span className="font-display font-bold text-lg leading-none uppercase">
+                      {categoryName.charAt(0)}
+                    </span>
+                  </div>
+                  
+                  <div className="min-w-0 flex flex-col justify-center">
+                    <div className="font-medium text-[0.9rem] text-white truncate mb-0.5">
+                      {description}
                     </div>
-                    <div style={{
-                      fontFamily: "var(--font-mono)",
-                      fontSize: "0.52rem",
-                      color: "var(--text-tertiary)",
-                      marginTop: "1px",
-                    }}>
-                      {t.category?.name || "—"}
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.6rem", color: "var(--text-tertiary)" }}>
+                      {categoryName}
                     </div>
                   </div>
                 </div>
 
                 {/* Date */}
-                <span style={{
+                <span className="hidden sm:block" style={{
                   fontFamily: "var(--font-mono)",
-                  fontSize: "0.58rem",
+                  fontSize: "0.65rem",
                   color: "var(--text-tertiary)",
                   whiteSpace: "nowrap",
-                  letterSpacing: "0.04em",
                 }}>
                   {formatDate(t.date)}
                 </span>
 
                 {/* Amount */}
-                <div className="flex items-center gap-1.5 justify-end">
-                  <Arrow size={11} style={{ color: isIncome ? "var(--income)" : "var(--expense)", flexShrink: 0 }} />
+                <div className="flex items-center gap-2 justify-end">
+                  <div 
+                    className="w-6 h-6 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: isIncome ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)' }}
+                  >
+                    {isIncome ? (
+                      <ArrowUpRight size={12} className="text-emerald-500" />
+                    ) : (
+                      <ArrowDownRight size={12} className="text-rose-500" />
+                    )}
+                  </div>
                   <span style={{
                     fontFamily: "var(--font-mono)",
-                    fontSize: "0.78rem",
-                    fontWeight: 500,
-                    color: isIncome ? "var(--income)" : "var(--expense)",
+                    fontSize: "0.95rem",
+                    fontWeight: 600,
+                    color: isIncome ? "var(--income)" : "var(--text-primary)",
                     fontVariantNumeric: "tabular-nums",
                     whiteSpace: "nowrap",
                   }}>
-                    {isIncome ? "+" : "−"}{formatCurrency(t.amount, currency)}
+                    {isIncome ? "+" : "-"}{formatCurrency(t.amount, currency)}
                   </span>
                 </div>
               </div>

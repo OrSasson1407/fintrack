@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -10,7 +9,7 @@ import {
   Target,
   BarChart3,
   Settings,
-  TrendingUp,
+  Activity,
 } from "lucide-react";
 
 const navItems = [
@@ -36,90 +35,92 @@ export function Sidebar() {
       style={{ backgroundColor: "var(--charcoal)", borderRight: "1px solid var(--border)", zIndex: 50 }}
     >
       {/* Logo Block */}
-      <div className="px-6 pt-7 pb-6" style={{ borderBottom: "1px solid var(--border)" }}>
-        <span style={{
+      <div className="px-5 pt-6 pb-5" style={{ borderBottom: "1px solid var(--border)" }}>
+        <div style={{
           fontFamily: "var(--font-mono)",
-          fontSize: "0.5rem",
-          letterSpacing: "0.18em",
+          fontSize: "0.48rem",
+          letterSpacing: "0.2em",
           textTransform: "uppercase",
           color: "var(--text-tertiary)",
-          display: "block",
-          marginBottom: "0.5rem",
+          marginBottom: "0.6rem",
         }}>
-          Personal Finance
-        </span>
+          Personal Finance OS
+        </div>
 
-        <Link href="/" className="group flex items-baseline gap-0.5">
-          <span style={{ fontFamily: "var(--font-display)", fontSize: "2rem", lineHeight: "1", color: "var(--acid)", letterSpacing: "0.04em" }}>
+        <Link href="/" className="flex items-baseline gap-0">
+          <span style={{ fontFamily: "var(--font-display)", fontSize: "2.2rem", lineHeight: 1, color: "var(--acid)", letterSpacing: "0.04em" }}>
             FIN
           </span>
-          <span style={{ fontFamily: "var(--font-display)", fontSize: "2rem", lineHeight: "1", color: "var(--text-primary)", letterSpacing: "0.04em" }}>
+          <span style={{ fontFamily: "var(--font-display)", fontSize: "2.2rem", lineHeight: 1, color: "var(--text-primary)", letterSpacing: "0.04em" }}>
             TRACK
           </span>
         </Link>
 
-        <div className="flex items-center gap-2 mt-2">
-          <span className="tag tag-acid" style={{ fontSize: "0.5rem", padding: "1px 6px" }}>v1.0</span>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.52rem", color: "var(--text-tertiary)" }}>
+        <div className="flex items-center gap-2 mt-2.5">
+          <span className="tag tag-acid" style={{ fontSize: "0.46rem", padding: "1px 5px" }}>v1.0</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.5rem", color: "var(--text-tertiary)" }}>
             {currentDate}
           </span>
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-4 py-5 overflow-y-auto">
-        <div className="mb-3 px-2">
-          <span style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: "0.52rem",
-            letterSpacing: "0.15em",
-            textTransform: "uppercase",
-            color: "var(--text-tertiary)",
-          }}>
-            Navigation
-          </span>
-        </div>
+      {/* Nav label */}
+      <div className="px-5 pt-5 pb-2">
+        <span style={{
+          fontFamily: "var(--font-mono)",
+          fontSize: "0.48rem",
+          letterSpacing: "0.2em",
+          textTransform: "uppercase",
+          color: "var(--text-tertiary)",
+        }}>
+          Navigation
+        </span>
+      </div>
 
-        <ul className="space-y-0.5">
+      {/* Navigation */}
+      <nav className="flex-1 px-3 overflow-y-auto">
+        <ul className="space-y-px">
           {navItems.map((item) => {
             const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
             return (
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className="flex items-center gap-3 px-3 py-2.5 transition-all duration-150"
+                  className="group flex items-center gap-3 px-3 py-2.5 transition-all duration-150"
                   style={{
                     backgroundColor: isActive ? "var(--acid-muted)" : "transparent",
-                    borderLeft: isActive ? "2px solid var(--acid)" : "2px solid transparent",
+                    borderLeft: `2px solid ${isActive ? "var(--acid)" : "transparent"}`,
                   }}
                 >
                   <span style={{
                     fontFamily: "var(--font-mono)",
-                    fontSize: "0.48rem",
+                    fontSize: "0.46rem",
                     color: isActive ? "var(--acid)" : "var(--text-tertiary)",
                     letterSpacing: "0.1em",
-                    minWidth: "14px",
+                    minWidth: "12px",
                   }}>
                     {item.code}
                   </span>
 
-                  <item.icon size={13} style={{ color: isActive ? "var(--acid)" : "var(--text-secondary)", flexShrink: 0 }} />
+                  <item.icon
+                    size={13}
+                    style={{ color: isActive ? "var(--acid)" : "var(--text-secondary)", flexShrink: 0 }}
+                  />
 
                   <span style={{
                     fontFamily: "var(--font-mono)",
-                    fontSize: "0.68rem",
-                    fontWeight: isActive ? "500" : "400",
-                    letterSpacing: "0.04em",
-                    color: isActive ? "var(--acid)" : "var(--text-secondary)",
+                    fontSize: "0.66rem",
+                    fontWeight: isActive ? 500 : 400,
+                    letterSpacing: "0.05em",
                     textTransform: "uppercase",
+                    color: isActive ? "var(--acid)" : "var(--text-secondary)",
+                    flex: 1,
                   }}>
                     {item.label}
                   </span>
 
                   {isActive && (
-                    <span className="ml-auto" style={{ fontFamily: "var(--font-mono)", fontSize: "0.7rem", color: "var(--acid)" }}>
-                      ›
-                    </span>
+                    <div style={{ width: 4, height: 4, backgroundColor: "var(--acid)", flexShrink: 0 }} />
                   )}
                 </Link>
               </li>
@@ -128,33 +129,54 @@ export function Sidebar() {
         </ul>
       </nav>
 
-      {/* Footer Status */}
-      <div className="px-4 py-4" style={{ borderTop: "1px solid var(--border)" }}>
-        <div className="mb-3">
-          <div className="flex items-center justify-between mb-2">
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.5rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-tertiary)" }}>
-              System
+      {/* System Status Footer */}
+      <div className="px-5 py-4" style={{ borderTop: "1px solid var(--border)" }}>
+        <div className="flex items-center justify-between mb-3">
+          <span style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: "0.48rem",
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            color: "var(--text-tertiary)",
+          }}>
+            System Status
+          </span>
+          <div className="flex items-center gap-1">
+            <div style={{ width: 5, height: 5, borderRadius: "50%", backgroundColor: "var(--income)" }} className="animate-pulse-acid" />
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.46rem", color: "var(--income)", letterSpacing: "0.1em" }}>
+              ONLINE
             </span>
-            <div className="flex items-center gap-1">
-              <div style={{ width: 5, height: 5, borderRadius: "50%", backgroundColor: "var(--income)" }} />
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.48rem", color: "var(--income)", letterSpacing: "0.08em" }}>LIVE</span>
-            </div>
           </div>
-
-          {[{ label: "Database", status: "OK" }, { label: "Sync", status: "OK" }].map((s) => (
-            <div key={s.label} className="flex items-center justify-between py-0.5">
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.52rem", color: "var(--text-tertiary)" }}>{s.label}</span>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.48rem", color: "var(--income)", letterSpacing: "0.08em" }}>{s.status}</span>
-            </div>
-          ))}
         </div>
 
-        <div className="flex items-center gap-2 p-2" style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}>
-          <TrendingUp size={11} style={{ color: "var(--acid)", flexShrink: 0 }} />
-          <div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.52rem", color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Privacy-First</div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.48rem", color: "var(--acid)" }}>Your data. Your control.</div>
+        {[
+          { label: "Database", val: "OK", color: "var(--income)" },
+          { label: "Sync", val: "OK", color: "var(--income)" },
+          { label: "API", val: "OK", color: "var(--income)" },
+        ].map((s) => (
+          <div key={s.label} className="flex items-center justify-between py-0.5">
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.5rem", color: "var(--text-tertiary)" }}>
+              {s.label}
+            </span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.46rem", color: s.color, letterSpacing: "0.1em" }}>
+              {s.val}
+            </span>
           </div>
+        ))}
+
+        <div
+          className="flex items-center gap-2 mt-3 px-3 py-2"
+          style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}
+        >
+          <Activity size={10} style={{ color: "var(--acid)", flexShrink: 0 }} />
+          <span style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: "0.5rem",
+            color: "var(--acid)",
+            letterSpacing: "0.04em",
+          }}>
+            Your data. Your control.
+          </span>
         </div>
       </div>
     </aside>
